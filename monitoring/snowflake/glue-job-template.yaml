@@ -1,0 +1,44 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  GlueJobRole:
+    Type: String
+  GlueJobName:
+    Type: String
+  GlueJobCronSchedule:
+    Type: String
+  GlueConnections:
+    Type: CommaDelimitedList
+  GlueVersion:
+    Type: String
+    Default: 3.0
+  ScriptPath:
+    Type: String
+
+Resources:
+  OntarioAMLGlueTrigger:
+    Type: 'AWS::Glue::Trigger'
+    Properties:
+      Name: !Sub "${GlueJobName}-trigger"
+      Description: !Sub "Glue Trigger for extract ${GlueJobName}"
+      Schedule: !Ref GlueJobCronSchedule
+      StartOnCreation: false
+      Type: SCHEDULED
+      Actions:
+        - JobName: !Sub "${GlueJobName}-job"
+  OntarioAMLGlueJob:
+    Type: 'AWS::Glue::Job'
+    Properties:
+      Name: !Sub "${GlueJobName}-job"
+      Description: !Sub "Glue Job for extract ${GlueJobName}"
+      Command:
+        Name: glueetl
+        PythonVersion: 3
+        ScriptLocation: !Ref ScriptPath
+      Connections:
+        Connections: !Ref GlueConnections
+      GlueVersion: !Ref GlueVersion
+      ExecutionProperty:
+        MaxConcurrentRuns: 1
+      MaxRetries: 1
+      Role: !Ref GlueJobRole

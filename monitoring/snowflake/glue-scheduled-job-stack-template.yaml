@@ -1,0 +1,59 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  GlueJobRole:
+    Type: String
+  GlueJobScriptUrl:
+    Type: String
+  GlueJobName:
+    Type: String
+  GlueConnections:
+    Type: CommaDelimitedList
+  GlueTriggerScheduleExpression:
+    Type: String
+  GlueNumberOfWorkers:
+    Type: String
+    Default: 10
+  GlueMaxConcurrency:
+    Type: String
+    Default: 1
+  GlueMaxRetries:
+    Type: String
+    Default: 3
+  GlueVersion:
+    Type: String
+    Default: 3.0
+
+Resources:
+  GlueJob:
+    Type: 'AWS::Glue::Job'
+    Properties:
+      Name: !Ref GlueJobName
+      Description: !Sub "Glue Job ${GlueJobName}"
+      Command:
+        Name: glueetl
+        PythonVersion: 3
+        ScriptLocation: !Ref GlueJobScriptUrl
+      Connections:
+        Connections: !Ref GlueConnections
+      DefaultArguments: {}
+      GlueVersion: !Ref GlueVersion
+      ExecutionProperty:
+        MaxConcurrentRuns: !Ref GlueMaxConcurrency
+      MaxRetries: !Ref GlueMaxRetries
+      MaxCapacity: !Ref GlueNumberOfWorkers
+      # These options are not scalable. Use MaxCapacity instead.
+      # See, https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-glue-job.html#cfn-glue-job-maxcapacity
+      # NumberOfWorkers: !Ref GlueNumberOfWorkers
+      # WorkerType: G.1X
+      Role: !Ref GlueJobRole
+  GlueJobTrigger:
+    Type: 'AWS::Glue::Trigger'
+    Properties:
+      Name: !Sub "${GlueJobName}Trigger"
+      Description: !Sub "Glue Trigger for Job ${GlueJobName}"
+      Schedule: !Ref GlueTriggerScheduleExpression
+      StartOnCreation: false
+      Type: SCHEDULED
+      Actions:
+        - JobName: !Ref GlueJob

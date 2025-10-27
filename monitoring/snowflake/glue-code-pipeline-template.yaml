@@ -1,0 +1,255 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  BranchName:
+    Description: GitHub branch name
+    Type: String
+  BuildSpecPath:
+    Description: Relative path to the buildspec file
+    Type: String
+  GlueJobName:
+    Description: Name of job to be created in glue
+    Type: String
+  GlueJobCronSchedule:
+    Type: String
+    Description: A cron expression used to specify the glue job schedule
+    Default: cron(0 1 * * ? *)
+  GlueConnectionNames:
+    Description: Names of connections to use in glue job
+    Type: String
+
+Resources:
+  CodePipelineServiceRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - 'codebuild.amazonaws.com'
+                - 'codepipeline.amazonaws.com'
+                - 'cloudformation.amazonaws.com'
+                - "glue.amazonaws.com"
+            Action: 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: NSUS-CodePipeline-Service
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "iam:CreateRole"
+                  - "iam:GetRole"
+                  - "iam:GetRolePolicy"
+                  - "iam:DeleteRolePolicy"
+                  - "iam:AttachRolePolicy"
+                  - "iam:PutRolePolicy"
+                  - 'iam:PassRole'
+                  - "iam:DeleteRole"
+                  - 'codebuild:BatchGetBuilds'
+                  - 'codebuild:StartBuild'
+                  - 'codeartifact:Describe*'
+                  - 'codeartifact:Get*'
+                  - 'codeartifact:List*'
+                  - 'codeartifact:ReadFromRepository'
+                  - 'sts:GetServiceBearerToken'
+                  - 'secretsmanager:GetSecretValue'
+                  - "cloudformation:CreateChangeSet"
+                  - 'cloudformation:*'
+                  - 's3:*'
+                  - "sns:*"
+                  - 's3-object-lambda:*'
+                  - 'cloudwatch:*'
+                  - 'logs:CreateLog*'
+                  - 'logs:PutLog*'
+                  - "glue:CreateScript"
+                  - "glue:CreateJob"
+                  - "glue:GetJob"
+                  - "glue:GetJobs"
+                  - "glue:UpdateJob"
+                  - "glue:DeleteJob"
+                  - "glue:CreateTrigger"
+                  - "glue:GetTrigger"
+                  - "glue:GetTriggers"
+                  - "glue:UpdateTrigger"
+                  - "glue:DeleteTrigger"
+                  - "glue:CreateWorkflow"
+                  - "glue:GetWorkflow"
+                  - "glue:UpdateWorkflow"
+                  - "glue:DeleteWorkflow"
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - "ec2:Describe*"
+                  - "ec2:CreateNetworkInterface"
+                  - "ec2:DeleteNetworkInterface"
+                  - "ec2:AttachNetworkInterface"
+                  - "events:*"
+                Resource: '*'
+              - Effect: Allow
+                Action: [ 'codestar-connections:GetConnection', 'codestar-connections:UseConnection' ]
+                Resource: 'arn:aws:codestar-connections:ap-northeast-1:011974100026:connection/68e8279e-b5dc-4bee-8944-88524876c9bf'
+  GlueJobRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - "glue.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSGlueServiceNotebookRole
+        - arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole
+        - arn:aws:iam::aws:policy/AWSGlueConsoleFullAccess
+        - arn:aws:iam::aws:policy/AwsGlueSessionUserRestrictedNotebookPolicy
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+      Policies:
+        - PolicyName: "DefaultGlueJobPolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "glue:GetSession"
+                  - "glue:ListSessions"
+                  - "glue:CreateSession"
+                  - "glue:DeleteSession"
+                  - "glue:StopSession"
+                  - "glue:GetStatement"
+                  - "glue:ListStatements"
+                  - "glue:RunStatement"
+                  - "glue:CancelStatement"
+                  - "glue:StartNotebook"
+                  - "glue:TerminateNotebook"
+                  - "glue:GlueNotebookRefreshCredentials"
+                  - "glue:DeregisterDataPreview"
+                  - "glue:GetNotebookInstanceStatus"
+                  - "glue:GlueNotebookAuthorize"
+                  - "secretsmanager:GetSecretValue"
+                Resource: "*"
+              - Effect: "Deny"
+                Action:
+                  - "glue:TagResource"
+                  - "glue:UntagResource"
+                  - "tag:TagResources"
+                  - "tag:UntagResources"
+                Resource: "arn:aws:glue:*:*:session/*"
+              - Effect: "Allow"
+                Action:
+                  - "iam:PassRole"
+                Resource: "arn:aws:iam::*:role/IamRoleGlueNotebook"
+                Condition:
+                  StringLike:
+                    "iam:PassedToService": [ "glue.amazonaws.com" ]
+  SimpleCodeBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub 'glue-job-build-${GlueJobName}'
+      Description: !Sub 'Code build project for glue job ${GlueJobName}'
+      ServiceRole: !GetAtt CodePipelineServiceRole.Arn
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: !Ref BuildSpecPath
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:5.0
+        Type: LINUX_CONTAINER
+      TimeoutInMinutes: 10
+      LogsConfig:
+        CloudWatchLogs:
+          Status: ENABLED
+      Visibility: PRIVATE
+  DeploymentPipeline:
+    Type: 'AWS::CodePipeline::Pipeline'
+    Version: 1
+    Properties:
+      Name: !Sub 'glue-job-deployments-${GlueJobName}'
+      RoleArn: !GetAtt CodePipelineServiceRole.Arn
+      ArtifactStores:
+        - Region: ap-east-1
+          ArtifactStore:
+            Location: codepipeline-ap-east-1-246224198684
+            Type: S3
+        - Region: ap-northeast-1
+          ArtifactStore:
+            Location: codepipeline-ap-northeast-1-51871570842
+            Type: S3
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: Source
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: CodeStarSourceConnection
+                Version: 1
+              RunOrder: 1
+              Configuration:
+                BranchName: !Ref BranchName
+                FullRepositoryId: pyloncloud/DataExchange.Common
+                ConnectionArn: 'arn:aws:codestar-connections:ap-northeast-1:011974100026:connection/68e8279e-b5dc-4bee-8944-88524876c9bf'
+                DetectChanges: false
+              OutputArtifacts:
+                - Name: SourceArtifact
+              Region: ap-northeast-1
+              Namespace: SourceVariables
+        - Name: Build
+          Actions:
+            - Name: !Sub 'Build-${GlueJobName}'
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              RunOrder: 1
+              Configuration:
+                ProjectName: !Ref SimpleCodeBuild
+              OutputArtifacts:
+                - Name: BuildArtifact
+              InputArtifacts:
+                - Name: SourceArtifact
+              Region: ap-northeast-1
+              Namespace: BuildVariables
+        - Name: Deploy
+          Actions:
+            - Name: !Sub 'ChangeSet-${GlueJobName}'
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: 1
+              RunOrder: 1
+              Configuration:
+                ActionMode: CHANGE_SET_REPLACE
+                Capabilities: CAPABILITY_IAM
+                RoleArn: !GetAtt CodePipelineServiceRole.Arn
+                ChangeSetName: !Sub 'changeset-${GlueJobName}'
+                StackName: !Sub 'glue-job-${GlueJobName}-stack'
+                TemplatePath: BuildArtifact::cloudformation-templates/glue-job-template.yaml
+                ParameterOverrides: !Sub '{"GlueJobRole":"${GlueJobRole.Arn}","GlueJobName":"${GlueJobName}","GlueJobCronSchedule":"${GlueJobCronSchedule}","GlueConnections":"${GlueConnectionNames}","ScriptPath":"#{BuildVariables.S3_PATH}"}'
+              OutputArtifacts: [ ]
+              InputArtifacts:
+                - Name: BuildArtifact
+              Region: ap-east-1
+            - Name: !Sub 'ApplyChange-${GlueJobName}'
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: 1
+              RunOrder: 2
+              Configuration:
+                ActionMode: CHANGE_SET_EXECUTE
+                ChangeSetName: !Sub 'changeset-${GlueJobName}'
+                StackName: !Sub 'glue-job-${GlueJobName}-stack'
+              Region: ap-east-1

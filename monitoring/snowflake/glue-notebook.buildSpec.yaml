@@ -1,0 +1,36 @@
+version: 0.2
+
+env:
+  exported-variables:
+    - GLUE_JOB_SCRIPT_URL
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.9
+  pre_build:
+    commands:
+      - pip install jupyter nbconvert
+      - export GLUE_JOB_SCRIPT_URL="${SOURCE_SCRIPT_REPOSITORY_PREFIX}/${GLUE_JOB_NAME}_$(date '+%Y%m%d_%H%M%S').py"
+      - export GLUE_JOB_SCRIPT_LOCAL_FILE=built-glue-job-script.py
+      - export GLUE_JOB_CLOUDFORMATION_TEMPLATE_FILE=cloudformation-templates/glue-scheduled-job-stack-template.yaml
+  build:
+    commands:
+      - jupyter nbconvert "${SOURCE_NOTEBOOK_FILE}" --to python --stdout > "${SOURCE_NOTEBOOK_FILE}.py"
+      - encoding=$(file -bi "${SOURCE_NOTEBOOK_FILE}.py" | cut -d '=' -f 2)
+      - >
+        if [[ "$encoding" != "utf-8" ]];
+        then
+          echo "Built script is encoded by ${encoding} not UTF-8. Transcoding output...";
+          iconv -f "$encoding" -t utf-8 "${SOURCE_NOTEBOOK_FILE}.py" -o "${SOURCE_NOTEBOOK_FILE}.py.utf8";
+          mv "${SOURCE_NOTEBOOK_FILE}.py.utf8" "${SOURCE_NOTEBOOK_FILE}.py";
+        fi
+      - grep -v "^get_ipython().run_line_magic" "${SOURCE_NOTEBOOK_FILE}.py" | grep -v '\# In\[[0-9 ]*\]:' > "${GLUE_JOB_SCRIPT_LOCAL_FILE}"
+      - echo 'job.commit()' >> "${GLUE_JOB_SCRIPT_LOCAL_FILE}"
+      - aws s3 cp "${GLUE_JOB_SCRIPT_LOCAL_FILE}" "${GLUE_JOB_SCRIPT_URL}" --region ${DEPLOY_REGION}
+      - 'sed "s%DefaultArguments: {}%DefaultArguments: $(echo $GLUE_JOB_PARAMETERS | jq -r tostring)%" "$GLUE_JOB_CLOUDFORMATION_TEMPLATE_FILE" > ./stack-template.yaml'
+artifacts:
+  type: zip
+  files:
+    - built-glue-job-script.py
+    - stack-template.yaml
