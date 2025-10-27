@@ -1,0 +1,100 @@
+# This AWS SAM template has been generated from your function's
+# configuration. If your function has one or more triggers, note
+# that the AWS resources associated with these triggers aren't fully
+# specified in this template and include placeholder values.Open this template
+# in AWS Application Composer or your favorite IDE and modify
+# it to specify a serverless application with other AWS resources.
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: An AWS Serverless Specification template describing your function.
+Resources:
+  TableauHealthCheck:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Description: ''
+      MemorySize: 2048
+      Timeout: 900
+      Handler: index.handler
+      Runtime: nodejs14.x
+      Architectures:
+        - x86_64
+      EventInvokeConfig:
+        MaximumEventAgeInSeconds: 21600
+        MaximumRetryAttempts: 2
+      EphemeralStorage:
+        Size: 512
+      Events:
+        Schedule1:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 2 * * ? *)
+      Environment:
+        Variables:
+          TABLEAU_BASE_URL: https://prod-apnortheast-a.online.tableau.com
+          TABLEAU_DX_PROJECT_ID: ce290545-cd45-415f-8ff2-44df3927a67b
+          TABLEAU_SITE_ID: d6a2e82b-68b7-468e-9335-bc124beec4ca
+          TABLEAU_SITE_NAME: nsusgroup
+      Layers:
+        - arn:aws:lambda:ap-east-1:011974100026:layer:secrets-module:1
+        - arn:aws:lambda:ap-east-1:011974100026:layer:tableau-module:3
+        - arn:aws:lambda:ap-east-1:011974100026:layer:parser-module:1
+      RuntimeManagementConfig:
+        UpdateRuntimeOn: Auto
+      SnapStart:
+        ApplyOn: None
+      PackageType: Zip
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+              Resource: arn:aws:logs:ap-east-1:011974100026:*
+            - Effect: Allow
+              Action:
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource:
+                - >-
+                  arn:aws:logs:ap-east-1:011974100026:log-group:/aws/lambda/Tableau-Health-Check:*
+            - Effect: Allow
+              Action:
+                - secretsmanager:*
+                - cloudformation:CreateChangeSet
+                - cloudformation:DescribeChangeSet
+                - cloudformation:DescribeStackResource
+                - cloudformation:DescribeStacks
+                - cloudformation:ExecuteChangeSet
+                - docdb-elastic:GetCluster
+                - docdb-elastic:ListClusters
+                - ec2:DescribeSecurityGroups
+                - ec2:DescribeSubnets
+                - ec2:DescribeVpcs
+                - kms:DescribeKey
+                - kms:ListAliases
+                - kms:ListKeys
+                - lambda:ListFunctions
+                - rds:DescribeDBClusters
+                - rds:DescribeDBInstances
+                - redshift:DescribeClusters
+                - tag:GetResources
+              Resource: '*'
+            - Effect: Allow
+              Action:
+                - lambda:AddPermission
+                - lambda:CreateFunction
+                - lambda:GetFunction
+                - lambda:InvokeFunction
+                - lambda:UpdateFunctionConfiguration
+              Resource: arn:aws:lambda:*:*:function:SecretsManager*
+            - Effect: Allow
+              Action:
+                - serverlessrepo:CreateCloudFormationChangeSet
+                - serverlessrepo:GetApplication
+              Resource: arn:aws:serverlessrepo:*:*:applications/SecretsManager*
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+              Resource:
+                - arn:aws:s3:::awsserverlessrepo-changesets*
+                - arn:aws:s3:::secrets-manager-rotation-apps-*/*
