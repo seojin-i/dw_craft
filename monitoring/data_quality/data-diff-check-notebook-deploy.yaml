@@ -1,0 +1,189 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  BranchName:
+    Description: GitHub branch name
+    Type: String
+  DetectChanges:
+    Type: String
+    Default: false
+    AllowedValues: [true, false]
+  SourceNotebookFile:
+    Description: Relative file path to the notebook code
+    Type: String
+  CodePipelineServiceRole:
+    Description: IAM Role Arn to use on the pipeline
+    Type: String
+  GlueJobRole:
+    Description: IAM Role Arn to use on the glue job
+    Type: String
+  DeployRegion:
+    Description: A region name to deploy Glue Job stack
+    Type: String
+  GlueJobName:
+    Description: A name of Glue Job
+    Type: String
+  GlueConnectionNames:
+    Description: Names of connections to use in glue
+    Type: String
+  GlueJobParameters:
+    Description: Default job parameters as argument string
+    Type: String
+    Default: ""
+  GlueNumberOfWorkers:
+    Type: String
+    Default: 10
+  GlueMaxConcurrency:
+    Type: String
+    Default: 1
+  GlueMaxRetries:
+    Type: String
+    Default: 1
+  GlueVersion:
+    Type: String
+    Default: 3.0
+  GlueTriggerScheduleExpression:
+    Type: String
+
+Mappings:
+  RegionMap:
+    us-east-1:
+      SourceScriptRepositoryPrefix: "s3://aws-glue-assets-190490205267-us-east-1/codepipeline-deploy"
+    ap-east-1:
+      SourceScriptRepositoryPrefix: "s3://aws-glue-assets-190490205267-ap-east-1/codepipeline-deploy"
+
+Resources:
+  SimpleCodeBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub 'build-glue-${GlueJobName}'
+      Description: !Sub 'Code build project for glue job ${GlueJobName}'
+      ServiceRole: !Ref CodePipelineServiceRole
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: cloudformation-templates/glue-notebook.buildSpec.yaml
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:5.0
+        Type: LINUX_CONTAINER
+        EnvironmentVariables:
+          - Name: SOURCE_SCRIPT_REPOSITORY_PREFIX
+            Value: !FindInMap [RegionMap, !Ref DeployRegion, SourceScriptRepositoryPrefix]
+            Type: PLAINTEXT
+          - Name: SOURCE_NOTEBOOK_FILE
+            Value: !Ref SourceNotebookFile
+            Type: PLAINTEXT
+          - Name: GLUE_JOB_NAME
+            Value: !Ref GlueJobName
+            Type: PLAINTEXT
+          - Name: GLUE_JOB_PARAMETERS
+            Value: !Ref GlueJobParameters
+            Type: PLAINTEXT
+          - Name: DEPLOY_REGION
+            Value: !Ref DeployRegion
+            Type: PLAINTEXT
+      TimeoutInMinutes: 10
+      LogsConfig:
+        CloudWatchLogs:
+          Status: ENABLED
+      Visibility: PRIVATE
+  DeploymentPipeline:
+    Type: 'AWS::CodePipeline::Pipeline'
+    Version: 1
+    Properties:
+      Name: !Sub 'deploy-glue-${GlueJobName}'
+      RoleArn: !Ref CodePipelineServiceRole
+      ArtifactStores:
+        - Region: ap-east-1
+          ArtifactStore:
+            Location: codepipeline-ap-east-1-164225785950
+            Type: S3
+        - Region: us-east-1
+          ArtifactStore:
+            Location: codepipeline-us-east-1-653186191430
+            Type: S3
+        - Region: ap-northeast-1
+          ArtifactStore:
+            Location: codepipeline-ap-northeast-1-320957818836
+            Type: S3
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: Source
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: CodeStarSourceConnection
+                Version: 1
+              RunOrder: 1
+              Configuration:
+                BranchName: !Ref BranchName
+                FullRepositoryId: pyloncloud/DataExchange.Common
+                ConnectionArn: 'arn:aws:codestar-connections:ap-northeast-1:190490205267:connection/46f3057b-f042-4bb5-961d-a21c48202368'
+                DetectChanges: !Ref DetectChanges
+              OutputArtifacts:
+                - Name: SourceArtifact
+              Region: ap-northeast-1
+              Namespace: SourceVariables
+        - Name: Build
+          Actions:
+            - Name: !Sub 'Build-${GlueJobName}'
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              RunOrder: 1
+              Configuration:
+                ProjectName: !Ref SimpleCodeBuild
+              OutputArtifacts:
+                - Name: BuildArtifact
+              InputArtifacts:
+                - Name: SourceArtifact
+              Region: ap-northeast-1
+              Namespace: BuildVariables
+        - Name: Deploy
+          Actions:
+            - Name: !Sub 'ChangeSet-${GlueJobName}'
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: 1
+              RunOrder: 1
+              Configuration:
+                ActionMode: CHANGE_SET_REPLACE
+                Capabilities: CAPABILITY_IAM
+                RoleArn: !Ref CodePipelineServiceRole
+                ChangeSetName: !Sub 'changeset-${GlueJobName}'
+                StackName: !Sub 'glue-scheduled-job-${GlueJobName}'
+                TemplatePath: BuildArtifact::stack-template.yaml
+                ParameterOverrides: !Sub '{
+                  "GlueJobRole":"${GlueJobRole}",
+                  "GlueJobName":"${GlueJobName}",
+                  "GlueConnections":"${GlueConnectionNames}",
+                  "GlueNumberOfWorkers":"${GlueNumberOfWorkers}",
+                  "GlueMaxConcurrency":"${GlueMaxConcurrency}",
+                  "GlueMaxRetries":"${GlueMaxRetries}",
+                  "GlueTriggerScheduleExpression":"${GlueTriggerScheduleExpression}",
+                  "GlueJobScriptUrl":"#{BuildVariables.GLUE_JOB_SCRIPT_URL}",
+                  "GlueVersion":"${GlueVersion}"
+                  }'
+              OutputArtifacts: [ ]
+              InputArtifacts:
+                - Name: BuildArtifact
+              Region: !Ref DeployRegion
+            - Name: !Sub 'ApplyChange-${GlueJobName}'
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: 1
+              RunOrder: 2
+              Configuration:
+                ActionMode: CHANGE_SET_EXECUTE
+                ChangeSetName: !Sub 'changeset-${GlueJobName}'
+                StackName: !Sub 'glue-scheduled-job-${GlueJobName}'
+              Region: !Ref DeployRegion
