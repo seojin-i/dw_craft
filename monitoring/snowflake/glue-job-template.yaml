@@ -16,7 +16,7 @@ Parameters:
     Type: String
 
 Resources:
-  OntarioAMLGlueTrigger:
+  JobName_GlueTrigger:
     Type: 'AWS::Glue::Trigger'
     Properties:
       Name: !Sub "${GlueJobName}-trigger"
@@ -26,7 +26,7 @@ Resources:
       Type: SCHEDULED
       Actions:
         - JobName: !Sub "${GlueJobName}-job"
-  OntarioAMLGlueJob:
+  JobName_GlueJob:
     Type: 'AWS::Glue::Job'
     Properties:
       Name: !Sub "${GlueJobName}-job"
@@ -42,3 +42,4 @@ Resources:
         MaxConcurrentRuns: 1
       MaxRetries: 1
       Role: !Ref GlueJobRole
+
