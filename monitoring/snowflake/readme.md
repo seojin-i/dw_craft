@@ -1,7 +1,7 @@
 Snowflake Operation과 관련된 작업
 
-## CodeBuild는 "자동 Build, Transform 단계"를 담당하는 AWS 서비스 입니다. 
-## CloudFormation은 "AWS Resource를 자동으로 만들어주는 Iac를 위한 도구 입니다. 
+# CodeBuild는 "자동 Build, Transform 단계"를 담당하는 AWS 서비스 입니다. 
+# CloudFormation은 "AWS Resource를 자동으로 만들어주는 Iac를 위한 도구 입니다. 
 
 1. glue-code-pipeline-templates.yaml
    - AWS Glue를 CloudFormation Template화 한 파일. (자동으로 Build 하기 위해 정의해둔 Iac)
