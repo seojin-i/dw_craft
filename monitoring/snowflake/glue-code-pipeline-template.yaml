@@ -196,7 +196,7 @@ Resources:
               RunOrder: 1
               Configuration:
                 BranchName: !Ref BranchName
-                FullRepositoryId: pyloncloud/DataExchange.Common
+                FullRepositoryId: Github/RepositoryName
                 ConnectionArn: 'arn:aws:codestar-connections:Region:{Number}:connection/{SecretNumber}'
                 DetectChanges: false
               OutputArtifacts:
@@ -253,4 +253,5 @@ Resources:
                 ChangeSetName: !Sub 'changeset-${GlueJobName}'
                 StackName: !Sub 'glue-job-${GlueJobName}-stack'
               Region: Region
+
 
