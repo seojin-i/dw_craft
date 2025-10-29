@@ -25,4 +25,8 @@ Snowflake Operation과 관련된 작업
    - AWS Glue Job을 정해진 Scheduled에 맞춰 자동으로 실행시키도록 만들기 위한 CloudFormation Iac.
 7. glue-script.buildSpec.yaml
    - 실제로 Glue Job을 실행하기 위한 Script
-   - s3 경로의 파일을 참조하여 최종적으로 Glue Job에 전달할 Parameter를 포함한 최종 배포용 .yaml 파일을 생성한다. 
+   - s3 경로의 파일을 참조하여 최종적으로 Glue Job에 전달할 Parameter를 포함한 최종 배포용 .yaml 파일을 생성한다.
+8. create_mart.sql
+   - 게임 통계에 대한 사용자의 요구사항을 반영한 Mart를 개발한 작업 Sample
+9. Sensitive_data_Masking.sql
+   - 민감 정보 Masking 처리와 관련된 Masking Policy 개발 
