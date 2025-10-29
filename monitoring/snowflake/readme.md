@@ -9,7 +9,8 @@ Snowflake Operation과 관련된 작업
      - Deploy 단계
           - AWS CloudFormation을 통해 Glue Job 생성 + Update.
 3. glue-job-templates.yaml
-4. glue-notebook.buildSpec.yaml
+  - AWS Glue에서 정해진 시간마다 자동으로 실행되는 Scheduled 작업을 자동으로 실행하기 위한 Iac. 
+5. glue-notebook.buildSpec.yaml
    - AWS Glue를 Jupyter Notebook으로 Local Test 해보기 위한 Iac
-5. glue-scheduled-job-stack-templates.yaml
-6. glue-script.buildSpec.yaml
+6. glue-scheduled-job-stack-templates.yaml
+7. glue-script.buildSpec.yaml
