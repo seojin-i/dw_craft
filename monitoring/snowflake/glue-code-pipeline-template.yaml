@@ -35,7 +35,7 @@ Resources:
             Action: 'sts:AssumeRole'
       Path: /
       Policies:
-        - PolicyName: NSUS-CodePipeline-Service
+        - PolicyName: ****-CodePipeline-Service
           PolicyDocument:
             Version: 2012-10-17
             Statement:
@@ -91,7 +91,7 @@ Resources:
                 Resource: '*'
               - Effect: Allow
                 Action: [ 'codestar-connections:GetConnection', 'codestar-connections:UseConnection' ]
-                Resource: 'arn:aws:codestar-connections:ap-northeast-1:011974100026:connection/68e8279e-b5dc-4bee-8944-88524876c9bf'
+                Resource: 'arn:aws:{resource_address}:connection/{secretNumber}'
   GlueJobRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -176,13 +176,13 @@ Resources:
       Name: !Sub 'glue-job-deployments-${GlueJobName}'
       RoleArn: !GetAtt CodePipelineServiceRole.Arn
       ArtifactStores:
-        - Region: ap-east-1
+        - Region: Region
           ArtifactStore:
-            Location: codepipeline-ap-east-1-246224198684
+            Location: codepipeline-Region-number
             Type: S3
-        - Region: ap-northeast-1
+        - Region: Region
           ArtifactStore:
-            Location: codepipeline-ap-northeast-1-51871570842
+            Location: codepipeline-Region-number
             Type: S3
       Stages:
         - Name: Source
@@ -197,11 +197,11 @@ Resources:
               Configuration:
                 BranchName: !Ref BranchName
                 FullRepositoryId: pyloncloud/DataExchange.Common
-                ConnectionArn: 'arn:aws:codestar-connections:ap-northeast-1:011974100026:connection/68e8279e-b5dc-4bee-8944-88524876c9bf'
+                ConnectionArn: 'arn:aws:codestar-connections:Region:{Number}:connection/{SecretNumber}'
                 DetectChanges: false
               OutputArtifacts:
                 - Name: SourceArtifact
-              Region: ap-northeast-1
+              Region: Region
               Namespace: SourceVariables
         - Name: Build
           Actions:
@@ -218,7 +218,7 @@ Resources:
                 - Name: BuildArtifact
               InputArtifacts:
                 - Name: SourceArtifact
-              Region: ap-northeast-1
+              Region: Region
               Namespace: BuildVariables
         - Name: Deploy
           Actions:
@@ -240,7 +240,7 @@ Resources:
               OutputArtifacts: [ ]
               InputArtifacts:
                 - Name: BuildArtifact
-              Region: ap-east-1
+              Region: Region
             - Name: !Sub 'ApplyChange-${GlueJobName}'
               ActionTypeId:
                 Category: Deploy
@@ -252,4 +252,5 @@ Resources:
                 ActionMode: CHANGE_SET_EXECUTE
                 ChangeSetName: !Sub 'changeset-${GlueJobName}'
                 StackName: !Sub 'glue-job-${GlueJobName}-stack'
-              Region: ap-east-1
+              Region: Region
+
