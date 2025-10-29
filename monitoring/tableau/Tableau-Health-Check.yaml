@@ -31,14 +31,14 @@ Resources:
             Schedule: cron(0 2 * * ? *)
       Environment:
         Variables:
-          TABLEAU_BASE_URL: https://prod-apnortheast-a.online.tableau.com
-          TABLEAU_DX_PROJECT_ID: ce290545-cd45-415f-8ff2-44df3927a67b
-          TABLEAU_SITE_ID: d6a2e82b-68b7-468e-9335-bc124beec4ca
-          TABLEAU_SITE_NAME: nsusgroup
+          TABLEAU_BASE_URL: https://url.tableau.com
+          TABLEAU_PROJECT_ID: {Tableau_Project_Number}
+          TABLEAU_SITE_ID: {Tableau_Site_Number}
+          TABLEAU_SITE_NAME: SiteName
       Layers:
-        - arn:aws:lambda:ap-east-1:011974100026:layer:secrets-module:1
-        - arn:aws:lambda:ap-east-1:011974100026:layer:tableau-module:3
-        - arn:aws:lambda:ap-east-1:011974100026:layer:parser-module:1
+        - arn:aws:lambda:{Region}:{Number}:layer:secrets-module:1
+        - arn:aws:lambda:{Region}:{Number}:layer:tableau-module:3
+        - arn:aws:lambda:{Region}:{Number}:layer:parser-module:1
       RuntimeManagementConfig:
         UpdateRuntimeOn: Auto
       SnapStart:
@@ -98,3 +98,4 @@ Resources:
               Resource:
                 - arn:aws:s3:::awsserverlessrepo-changesets*
                 - arn:aws:s3:::secrets-manager-rotation-apps-*/*
+
