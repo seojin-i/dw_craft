@@ -49,14 +49,14 @@ Resources:
             - Effect: Allow
               Action:
                 - logs:CreateLogGroup
-              Resource: arn:aws:logs:ap-east-1:011974100026:*
+              Resource: arn:aws:logs:{resion}:011974100026:*
             - Effect: Allow
               Action:
                 - logs:CreateLogStream
                 - logs:PutLogEvents
               Resource:
                 - >-
-                  arn:aws:logs:ap-east-1:011974100026:log-group:/aws/lambda/Tableau-Health-Check:*
+                  arn:aws:logs:{region}:011974100026:log-group:/aws/lambda/Tableau-Health-Check:*
             - Effect: Allow
               Action:
                 - secretsmanager:*
@@ -98,4 +98,5 @@ Resources:
               Resource:
                 - arn:aws:s3:::awsserverlessrepo-changesets*
                 - arn:aws:s3:::secrets-manager-rotation-apps-*/*
+
 
