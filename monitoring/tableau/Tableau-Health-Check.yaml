@@ -49,7 +49,7 @@ Resources:
             - Effect: Allow
               Action:
                 - logs:CreateLogGroup
-              Resource: arn:aws:logs:{resion}:011974100026:*
+              Resource: arn:aws:logs:{resion}:{arn_number}:*
             - Effect: Allow
               Action:
                 - logs:CreateLogStream
@@ -98,6 +98,7 @@ Resources:
               Resource:
                 - arn:aws:s3:::awsserverlessrepo-changesets*
                 - arn:aws:s3:::secrets-manager-rotation-apps-*/*
+
 
 
 
