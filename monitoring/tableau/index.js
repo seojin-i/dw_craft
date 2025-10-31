@@ -1,18 +1,18 @@
-const {Secrets} = require('nsus/secrets');
-const {Tableau} = require('nsus/tableau/method');
+const {Secrets} = require('package/secrets');
+const {Tableau} = require('package/tableau/method');
 const { SecretsManagerClient, GetSecretValueCommand } = require('@aws-sdk/client-secrets-manager');  // aws-sdk V3
-const xml2json = require('nsus/parser/xmltojson');
+const xml2json = require('package/parser/xmltojson');
 const process = require('process');
 const axios = require('axios');
 
 // 전역 변수 설정
 let tableau;
-const projectNameList = [];                      // DX 프로젝트 하위에 존재하는 모든 project_id가 담긴 list
-const workbookIdDict = {};                         // Project에 존재하는 모든 workbook List
-const viewIdDict = {};                             // Workbook에 존재하는 모든 View List
+const projectNameList = [];                     // 특정 프로젝트 하위에 존재하는 모든 project_id가 담긴 list
+const workbookIdDict = {};                      // Project에 존재하는 모든 workbook List
+const viewIdDict = {};                          // Workbook에 존재하는 모든 View List
 const errorList = [];                           // Slack 결과로 반활될 Error가 있는 Tableau View List
 const secretName = 'prod/slack/webhook_url';    // SecretManager Name
-const region = 'ap-east-1';                     // region
+const region = '{region}';                      // region
 
 // lambda Handler
 exports.handler = async (event) => {
@@ -21,8 +21,8 @@ exports.handler = async (event) => {
         tableau = await getTableauInfo();
         await tableauSignIn();
 
-        // DX 프로젝트에 존재하는 모든 project name을 알기 위해 가장 먼저 수행되어야 하는 함수.
-        await recursiveGetAllProjectId({projectId: process.env.TABLEAU_DX_PROJECT_ID});  // 최상위 DX Project id
+        // 특정 프로젝트에 존재하는 모든 project name을 알기 위해 가장 먼저 수행되어야 하는 함수.
+        await recursiveGetAllProjectId({projectId: process.env.TABLEAU_PROJECT_ID});  // 최상위 Project id
 
         // project name을 통해서 해당 프로젝트에 존재하는 모든 workbook id가져와서 list에 저장.
         await getAllWorkbookId();
@@ -49,13 +49,13 @@ async function getSecretInfo(){
     const client = new SecretsManagerClient({ region: region });
     const command = new GetSecretValueCommand({ SecretId: secretName });
     const data = await client.send(command);
-    const slackWebhookUrl = JSON.parse(data.SecretString)['notice-data_warehouse'];
+    const slackWebhookUrl = JSON.parse(data.SecretString)['{notice-slack_channel}'];
     return slackWebhookUrl;
 }
 
 async function getTableauInfo() {
     const tableauInfo = await Secrets.getSecrets({
-        secretName: 'tableau', region: 'ap-east-1', env: 'prod'
+        secretName: 'tableau', region: '{Region}', env: 'prod'
     });
 
     const tableau = await new Tableau({
@@ -81,11 +81,11 @@ async function tableauSignIn() {
 
 /*
 1. 제일 먼저 실행되어야 하는 함수.
-   재귀형로 동작되며, 가장 최상위 프로젝트(DX)에 존재하는 모든 project name을 찾아서 list에 저장.
+   재귀형로 동작되며, 가장 최상위 프로젝트에 존재하는 모든 project name을 찾아서 list에 저장.
  */
 async function recursiveGetAllProjectId({projectId}) {
     try {
-        const projectInfoData = await getDataFromTableauApi(`/api/3.4/sites/${tableau.siteId}/projects?filter=parentProjectId:eq:${projectId}`);
+        const projectInfoData = await getDataFromTableauApi(`/api/{version}/sites/${tableau.siteId}/projects?filter=parentProjectId:eq:${projectId}`);
         const jsonData = await xml2json(projectInfoData); // json 형태로 변환한 데이터
         const projectList = jsonData.tsResponse.projects[0].project;
 
@@ -111,7 +111,7 @@ async function recursiveGetAllProjectId({projectId}) {
 async function getAllWorkbookId() {
     try {
         for (const project_name of projectNameList) {
-            const workBookInfoData = await getDataFromTableauApi(`/api/3.4/sites/${tableau.siteId}/workbooks?filter=projectName:eq:${project_name}`);
+            const workBookInfoData = await getDataFromTableauApi(`/api/{version}/sites/${tableau.siteId}/workbooks?filter=projectName:eq:${project_name}`);
             const jsonData = await xml2json(workBookInfoData);
             const workbookList = jsonData.tsResponse.workbooks[0].workbook; // jsonData.tsResponse.workbook[0].$.webpageUrl
 
@@ -140,7 +140,7 @@ async function getAllWorkbookId() {
 async function getAllViewId() {
     try {
         for (const workbook_id in workbookIdDict) {
-            const viewInfoData = await getDataFromTableauApi(`/api/3.4/sites/${tableau.siteId}/workbooks/${workbook_id}/views`);
+            const viewInfoData = await getDataFromTableauApi(`/api/{version}/sites/${tableau.siteId}/workbooks/${workbook_id}/views`);
             const jsonData = await xml2json(viewInfoData);
             const viewList = jsonData.tsResponse.views[0].view;
 
@@ -169,7 +169,6 @@ View id를 통해 모든 View에 api call하여 Data 존재여부 확인. ViewDa
                         - vf_: Tableau filtering 조건으로 작성될 FieldName의 Prefix 예약어
                         - %20: FieldName에 공백이 존재할 경우, 공백이 있다는 것을 알리기 위한 Tableau 예약어
                         - =Value: FieldName의 조건으로 지정될 값을 의미.
-2024-02-14 추가된 내용
     - 정상적인 View임에도 불구하고 Api Call시 Authentication Token 만료로 인해 401 error가 발생하는 이슈 존재.
         - 해결방법
             - Tableau Document에도 api call을 통해 받아오는 Authentication Token에 대한 expired time에 대한 가이드가 존재하지 않아 정확한 토큰 만료 시간을 알 수 없음.
@@ -180,7 +179,7 @@ View id를 통해 모든 View에 api call하여 Data 존재여부 확인. ViewDa
 async function getViewData() {
     try {
         for (const view_id in viewIdDict) {
-            const viewData = await getViewDataFromTableauApi(`/api/3.4/sites/${tableau.siteId}/views/${view_id}/data?vf_Index=1`);
+            const viewData = await getViewDataFromTableauApi(`/api/{version}/sites/${tableau.siteId}/views/${view_id}/data?vf_Index=1`);
             console.log('===============================================');
             console.log(viewData);
             if (!viewData || (viewData && viewData.length <= 1) || (viewData == 400)){
@@ -262,7 +261,7 @@ async function sendSlackMessage(webhookUrl) {
     try {
         const urlList = [];
         const slackMessageTemplate = {
-            channel: 'notice-data_warehouse', username: 'Tableau', text: `Tableau Views Health Check`, blocks: [{
+            channel: '{notice-slack_channel}', username: 'Tableau', text: `Tableau Views Health Check`, blocks: [{
                 "type": "header", "text": {
                     "type": "plain_text", "text": "Tableau Views Health Check", "emoji": true
                 }
@@ -302,3 +301,4 @@ async function sendSlackMessage(webhookUrl) {
         throw error;
     }
 }
+
