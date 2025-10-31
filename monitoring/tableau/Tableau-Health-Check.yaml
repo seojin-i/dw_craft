@@ -56,7 +56,7 @@ Resources:
                 - logs:PutLogEvents
               Resource:
                 - >-
-                  arn:aws:logs:{region}:011974100026:log-group:/aws/lambda/Tableau-Health-Check:*
+                  arn:aws:logs:{region}:{arn_number}:log-group:/aws/lambda/Tableau-Health-Check:*
             - Effect: Allow
               Action:
                 - secretsmanager:*
@@ -98,5 +98,6 @@ Resources:
               Resource:
                 - arn:aws:s3:::awsserverlessrepo-changesets*
                 - arn:aws:s3:::secrets-manager-rotation-apps-*/*
+
 
 
