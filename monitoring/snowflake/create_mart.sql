@@ -214,7 +214,7 @@ create or replace dynamic table DW_TEST.TEST.STATISTICS_GAME(
 	ORIGINAL_RAKE_DIFFERENCE,
 	ORIGINAL_GGR,
 	ORIGINAL_ESTIMATED_GGR
-) target_lag = '1 hour' refresh_mode = AUTO initialize = ON_CREATE warehouse = DT_GP1_WH
+) target_lag = '1 hour' refresh_mode = AUTO initialize = ON_CREATE warehouse = DT_STATS_WH
  as
 SELECT   aggregated_at AS aggregated_at,
          -- week.
@@ -509,7 +509,7 @@ SELECT   aggregated_at AS aggregated_at,
         SUM(ROUND(CASE WHEN site_id NOT IN ('GGPCZ', 'GGPBE', 'WSOPON') AND requested_at >= '2024-12-15 08:00' AND requested_at < '2024-12-27 08:00' AND (brand_id != 'POKERARABIA' OR is_exclusive = 0) THEN rake_or_fee + ggr ELSE ggr END / requested_exchange_rate * 1 , 8)) AS original_ggr,
         SUM(ROUND(CASE WHEN site_id NOT IN ('GGPCZ', 'GGPBE', 'WSOPON') AND requested_at >= '2024-12-15 08:00' AND requested_at < '2024-12-27 08:00' AND (brand_id != 'POKERARABIA' OR is_exclusive = 0) THEN rake_or_fee + estimated_ggr ELSE estimated_ggr END / requested_exchange_rate * 1 , 8)) AS original_estimated_ggr
 
-FROM     DW_ORIGIN_GLOBAL_TEST.GLOBAL_TEST_GP_STATS5_DB_STATS.STATISTICS_GAME_POKER_PER_SESSION
+FROM     DW_ORIGIN_GLOBAL_TEST.GLOBAL_TEST_DB_STATS.STATISTICS_GAME_POKER_PER_SESSION
 WHERE    requester_id NOT IN ('_TG', '_FS') -- AND game_id NOT IN ('0', '00000000000000000000000000000000')
 GROUP BY
     -- day.
