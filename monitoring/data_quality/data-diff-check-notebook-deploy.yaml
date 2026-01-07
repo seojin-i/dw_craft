@@ -48,9 +48,9 @@ Parameters:
 Mappings:
   RegionMap:
     us-east-1:
-      SourceScriptRepositoryPrefix: "s3://aws-glue-assets-190490205267-us-east-1/codepipeline-deploy"
+      SourceScriptRepositoryPrefix: "s3://aws-glue-assets-{glueNumber}-{region}/codepipeline-deploy"
     ap-east-1:
-      SourceScriptRepositoryPrefix: "s3://aws-glue-assets-190490205267-ap-east-1/codepipeline-deploy"
+      SourceScriptRepositoryPrefix: "s3://aws-glue-assets-{glueNumber}-{region}/codepipeline-deploy"
 
 Resources:
   SimpleCodeBuild:
@@ -98,15 +98,15 @@ Resources:
       ArtifactStores:
         - Region: ap-east-1
           ArtifactStore:
-            Location: codepipeline-ap-east-1-164225785950
+            Location: codepipeline-{region}-{number}
             Type: S3
         - Region: us-east-1
           ArtifactStore:
-            Location: codepipeline-us-east-1-653186191430
+            Location: codepipeline-{region}-{number}
             Type: S3
         - Region: ap-northeast-1
           ArtifactStore:
-            Location: codepipeline-ap-northeast-1-320957818836
+            Location: codepipeline-{region}-{number}
             Type: S3
       Stages:
         - Name: Source
@@ -187,4 +187,5 @@ Resources:
                 ChangeSetName: !Sub 'changeset-${GlueJobName}'
                 StackName: !Sub 'glue-scheduled-job-${GlueJobName}'
               Region: !Ref DeployRegion
+
 
