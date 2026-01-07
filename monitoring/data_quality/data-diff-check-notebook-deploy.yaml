@@ -121,7 +121,7 @@ Resources:
               Configuration:
                 BranchName: !Ref BranchName
                 FullRepositoryId: pyloncloud/DataExchange.Common
-                ConnectionArn: 'arn:aws:codestar-connections:ap-northeast-1:190490205267:connection/46f3057b-f042-4bb5-961d-a21c48202368'
+                ConnectionArn: 'arn:aws:codestar-connections:{region}:{number}:connection/{SecretNumber}'
                 DetectChanges: !Ref DetectChanges
               OutputArtifacts:
                 - Name: SourceArtifact
@@ -187,3 +187,4 @@ Resources:
                 ChangeSetName: !Sub 'changeset-${GlueJobName}'
                 StackName: !Sub 'glue-scheduled-job-${GlueJobName}'
               Region: !Ref DeployRegion
+
