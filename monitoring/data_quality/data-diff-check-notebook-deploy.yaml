@@ -47,9 +47,9 @@ Parameters:
 
 Mappings:
   RegionMap:
-    us-east-1:
+    {region_1}:
       SourceScriptRepositoryPrefix: "s3://aws-glue-assets-{glueNumber}-{region}/codepipeline-deploy"
-    ap-east-1:
+    {region_2}:
       SourceScriptRepositoryPrefix: "s3://aws-glue-assets-{glueNumber}-{region}/codepipeline-deploy"
 
 Resources:
@@ -187,5 +187,6 @@ Resources:
                 ChangeSetName: !Sub 'changeset-${GlueJobName}'
                 StackName: !Sub 'glue-scheduled-job-${GlueJobName}'
               Region: !Ref DeployRegion
+
 
 
