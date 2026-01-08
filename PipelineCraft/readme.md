@@ -13,4 +13,7 @@
      - Wikimedia Data를 API Call 하여 가져오도록 DAG 구성
      - 가져온 데이터를 postgre DB에 저장
 
-3. 
+3. Result Output
+  - docker-compose.yaml
+  - extract_apidata_load_db.py
+  - README.md
