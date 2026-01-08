@@ -96,15 +96,15 @@ Resources:
       Name: !Sub 'deploy-glue-${GlueJobName}'
       RoleArn: !Ref CodePipelineServiceRole
       ArtifactStores:
-        - Region: ap-east-1
+        - Region: {region_1}
           ArtifactStore:
             Location: codepipeline-{region}-{number}
             Type: S3
-        - Region: us-east-1
+        - Region: {region_1}
           ArtifactStore:
             Location: codepipeline-{region}-{number}
             Type: S3
-        - Region: ap-northeast-1
+        - Region: {region_2}
           ArtifactStore:
             Location: codepipeline-{region}-{number}
             Type: S3
@@ -125,7 +125,7 @@ Resources:
                 DetectChanges: !Ref DetectChanges
               OutputArtifacts:
                 - Name: SourceArtifact
-              Region: ap-northeast-1
+              Region: {region_2}
               Namespace: SourceVariables
         - Name: Build
           Actions:
@@ -142,7 +142,7 @@ Resources:
                 - Name: BuildArtifact
               InputArtifacts:
                 - Name: SourceArtifact
-              Region: ap-northeast-1
+              Region: {region_2}
               Namespace: BuildVariables
         - Name: Deploy
           Actions:
@@ -187,6 +187,7 @@ Resources:
                 ChangeSetName: !Sub 'changeset-${GlueJobName}'
                 StackName: !Sub 'glue-scheduled-job-${GlueJobName}'
               Region: !Ref DeployRegion
+
 
 
 
