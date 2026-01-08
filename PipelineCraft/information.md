@@ -1,5 +1,5 @@
 1. Architecture (ELT)
-   - wikimedia API data -> Docker Airflow -> Postgres DB Load -> DBT + Airflow(PySpark)
+   - wikimedia API data -> Docker Airflow -> Postgres DB Load
 
 2. Environment && Architecture Properties
   - Tool: Docker Desktop, pycharm
