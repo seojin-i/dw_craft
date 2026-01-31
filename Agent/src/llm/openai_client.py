@@ -15,9 +15,10 @@ class OpenAIClient:
     def chat(self, messages, tools=None):
         response = self.openai_client.chat.completions.create(
             model=self.model,
-            messages=messages
+            messages=messages,
+            tools=tools
         )
-        return response.choices[0].message.content
+        return response.choices[0].message
 
     def __str__(self):
         return f"OpenAIClient(model={self.model})"
