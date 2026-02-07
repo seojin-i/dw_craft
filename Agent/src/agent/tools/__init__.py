@@ -1,5 +1,5 @@
-from src.agent.tools.base import BaseTool
-from src.agent.tools.company_profile import CompanyProfileTool
+from .base import BaseTool
+from .company_profile import CompanyProfileTool
 # from src.agent.tools.financial_data import FinancialDataTool
 # from src.agent.tools.news_search import NewsSearchTool
 
