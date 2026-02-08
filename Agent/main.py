@@ -1,15 +1,9 @@
 import json
-from pprint import pprint
+import streamlit as st
 
 from src.llm.openai_client import OpenAIClient
-from src.agent.prompts.search_company_info_prompt import CompanyInfoPrompt
+from src.agent.prompts.search_company_info_prompt import CompanyInfoPrompt, SystemPropmt
 from src.agent.tools.tool_registry import TOOLS
-
-
-# SYSTEM_PROMPT = """
-# 한글말로 들어오면 영어로 번역해서 처리해줘 하지만 답변은 무조건 한국말로 번역해서 답변해줘 최대한 사람이 대화한것 처럼 친근감 있게 답변 해줘.
-# 그리고 무조건 정해진 Tool을 이용해서 답변을 만들어서 돌려줘
-# """
 
 class StockResearchAgent:
     def __init__(self):
@@ -21,72 +15,60 @@ class StockResearchAgent:
     def __str__(self):
         return "StockResearchAgent using tools: " + ", ".join([tool.name for tool in TOOLS])
 
-    def process(self, **kwargs):
-        while True:
-            user_input = input("궁금한 주식 정보 물어보세요: ").strip()
-            if user_input.lower() in {"exit", "quit", "안녕", "종료"}:
-                print("Bye 👋")
-                break
+    def prompt_chaining(self, user_input: str, prompt_chains: list[str]) -> list[str]:
+        """
+        Prompt chaining logic to handle multi-step reasoning.
+        :param user_input:
+        :return: list() -> messages
+        """
+        response_chain = []
+        final_prompts = []          # 최종 프롬프트들을 저장할 리스트
+        prev_response = user_input  # 이전 사용자의 질문
+        for i, prompt in enumerate(prompt_chains):
+            final_prompt = f"""
+            {prompt}
+            처음 사용자가 입력한 내용은 다음과 같아. 응답할 때 항상 이 내용을 고려해서 답변해줘
+            {user_input}
+            또한 응답시 아래 내용도 참고해서 답변해줘
+            {prev_response}"""
+            final_prompts.append(final_prompt)
+            response = self.llm.chat(
+                messages=[
+                    {"role": "system", "content": SystemPropmt.system_prompt,
+                    "role": "user", "content": final_prompt}
+                ]
+            )
+            response_chain.append(response.content)    # LLM 응답 결과를 다음 프롬프트의 입력으로 사용
+            prev_response = response.content           # 다음 프롬프트의 입력을 업데이트
+        return response_chain, final_prompts           # 최종 응답 체인과 최종 프롬프트 반환
 
-            self.messages = [
-                {"role": "system", "content": CompanyInfoPrompt.search_company_info_prompt},
-                {"role": "user", "content": user_input}
-            ]
+    def process(self):
+        # streamlit UI 설정
+        st.set_page_config(page_title="Stock Research Agent", page_icon="📈")
+        st.title("📈 Stock Research Agent")
 
-            try:
-                # 1️⃣ 첫 LLM 호출 (tool 선택)
-                response = self.llm.chat(self.messages, tools=self.tools)
+        # User input
+        initial_input = st.text_area("궁금한 주식 정보 물어보세요:", height=100)
+        custom_prompt = []
+        # with st.expander("단계별 프롬프트 설정", expanded=False):
+            # prompt chaining 실행
+        if st.button("정보 검색 시작"):
+            with st.spinner("정보를 검색하는 중입니다..."):
+                final_response_chain, final_prompts = self.prompt_chaining(
+                    initial_input, CompanyInfoPrompt.search_company_info_prompt
+                )
+        final_result_tab, details_tab = st.tabs(["최종 결과", "상세 과정"])
 
-                # 2️⃣ tool 호출 처리
-                if response.tool_calls:
-                    # 🔥 1. assistant 메시지를 먼저 추가
-                    self.messages.append({
-                        "role": "assistant",
-                        "content": response.content,
-                        "tool_calls": [
-                            {
-                                "id": call.id,
-                                "type": "function",
-                                "function": {
-                                    "name": call.function.name,
-                                    "arguments": call.function.arguments,
-                                }
-                            }
-                            for call in response.tool_calls
-                        ]
-                    })
+        with final_result_tab:
+            st.write(final_response_chain)
 
-                    # 🔥 2. tool 실행 & tool 메시지 추가
-                    for call in response.tool_calls:
-                        tool_name = call.function.name
-                        tool_args = json.loads(call.function.arguments)
-
-                        tool = self.tool_map[tool_name]
-                        result = tool.process(**tool_args)
-
-                        self.messages.append({
-                            "role": "tool",
-                            "tool_call_id": call.id,
-                            "content": json.dumps(result, ensure_ascii=False)
-                        })
-                    # 🔥 3. tool 결과 포함해 다시 호출
-                    response = self.llm.chat(self.messages)
-
-                # 4. 최종 결과를 답변으로 설정
-                self.messages.append({
-                    "role": "assistant",
-                    "content": response.content
-                })
-
-                # 5. 최종 답변 출력
-                print("\n" + "=" * 50)
-                # print(result_response.content)
-                print(response.content) # class 'openai.types.chat.chat_completion_message.ChatCompletionMessage'
-                print("=" * 50 + "\n")
-
-            except Exception as e:
-                print(f"Error during LLM chat: {e}")
-                continue
+        with details_tab:
+            for i, (prompt, response) in enumerate(
+                    zip(final_prompts, final_response_chain)
+            ):
+                with st.expander(f"단계 {i + 1}"):
+                    st.markdown(f"**프롬프트**\n```\n{prompt}\n```")
+                    st.markdown(f"**응답**\n```\n{response}\n```")
 
 
 if __name__ == "__main__":
