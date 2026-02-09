@@ -1,7 +1,9 @@
-from src.agent.tools.company_profile import CompanyProfileTool
+from .company_profile import CompanyProfileTool
+from .web_crawling import WebCrawlingTool
 
 TOOLS = [
     CompanyProfileTool(),
+    WebCrawlingTool(),
 ]
 
 def get_tool_by_name(name):

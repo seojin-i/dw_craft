@@ -1,5 +1,7 @@
 from .base import BaseTool
 from .company_profile import CompanyProfileTool
+from .web_crawling import WebCrawlingTool
+from .validate_wrapper import ValidateWrapper
 # from src.agent.tools.financial_data import FinancialDataTool
 # from src.agent.tools.news_search import NewsSearchTool
 
@@ -11,6 +13,7 @@ def get_all_tools():
     return [
         BaseTool(),
         CompanyProfileTool(),
+        WebCrawlingTool(),
         # FinancialDataTool(),
         # NewsSearchTool()
     ]
