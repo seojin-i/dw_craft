@@ -1,10 +1,11 @@
 from .company_profile import CompanyProfileTool
-from .web_crawling import WebCrawlingTool
-
-TOOLS = [
-    CompanyProfileTool(),
-    WebCrawlingTool(),
-]
+from .static_crawling import WebStaticCrawlingTool
+from .dynamic_crawling import WebDynamicCrawlingTool
+TOOLS = {
+    "search_company": CompanyProfileTool(),
+    "static_web_crawling" : WebStaticCrawlingTool(),
+    "dynamic_web_crawling" : WebDynamicCrawlingTool()
+}
 
 def get_tool_by_name(name):
     """
@@ -17,12 +18,12 @@ def get_tool_by_name(name):
             return tool
     return None
 
-def get_tool_schema():
-    """
-    사용 가능한 도구의 schema를 반환하는 함수
-    :return:
-    """
-    return [tool.schema for tool in TOOLS]
+# def get_tool_schema():
+#     """
+#     사용 가능한 도구의 schema를 반환하는 함수
+#     :return:
+#     """
+#     return [tool.schema for tool in TOOLS]
 
 def run_rool(tool_name, **kwargs):
     """

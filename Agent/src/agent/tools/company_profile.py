@@ -4,9 +4,8 @@ from src.agent.tools.base import BaseTool
 
 class CompanyProfileTool(BaseTool):
     name = "get_company_profile"
-    description = "Fetch a company profile from Wikipedia."
+    description = "특정 회사의 정보를 Wikipedia 사이트를 이용해서 조회하는 도구입니다."
 
-    @classmethod
     def schema(cls) -> dict:
         return {
             "type": "function",

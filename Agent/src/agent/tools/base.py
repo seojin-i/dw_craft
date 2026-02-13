@@ -3,7 +3,6 @@ class BaseTool(ABC):
     name: str
     description: str
 
-    @abstractmethod
     def schema(self) -> dict:
         """
         OpenAI tool schema

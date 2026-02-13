@@ -8,8 +8,6 @@ from src.agent.tools.tool_registry import TOOLS
 class StockResearchAgent:
     def __init__(self):
         self.llm = OpenAIClient(model="gpt-4o")
-        self.tools = [tool.schema() for tool in TOOLS]
-        self.tool_map = {tool.name: tool for tool in TOOLS}
         self.messages = []
 
     def __str__(self):
@@ -52,23 +50,30 @@ class StockResearchAgent:
         custom_prompt = []
         # with st.expander("단계별 프롬프트 설정", expanded=False):
             # prompt chaining 실행
+        final_response_chain = None
+        final_prompts = None
+
         if st.button("정보 검색 시작"):
             with st.spinner("정보를 검색하는 중입니다..."):
                 final_response_chain, final_prompts = self.prompt_chaining(
-                    initial_input, CompanyInfoPrompt.search_company_info_prompt
+                    initial_input,
+                    CompanyInfoPrompt.search_company_info_prompt
                 )
+
         final_result_tab, details_tab = st.tabs(["최종 결과", "상세 과정"])
 
         with final_result_tab:
-            st.write(final_response_chain)
+            if final_response_chain:
+                st.write(final_response_chain)
 
         with details_tab:
-            for i, (prompt, response) in enumerate(
-                    zip(final_prompts, final_response_chain)
-            ):
-                with st.expander(f"단계 {i + 1}"):
-                    st.markdown(f"**프롬프트**\n```\n{prompt}\n```")
-                    st.markdown(f"**응답**\n```\n{response}\n```")
+            if final_prompts and final_response_chain:
+                for i, (prompt, response) in enumerate(
+                        zip(final_prompts, final_response_chain)
+                ):
+                    with st.expander(f"단계 {i + 1}"):
+                        st.markdown(f"**프롬프트**\n```\n{prompt}\n```")
+                        st.markdown(f"**응답**\n```\n{response}\n```")
 
 
 if __name__ == "__main__":

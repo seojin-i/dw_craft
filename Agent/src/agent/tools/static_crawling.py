@@ -2,12 +2,12 @@ import requests
 import re
 from bs4 import BeautifulSoup
 
-from base import BaseTool
+from src.agent.tools.base import BaseTool
 from src.agent.tools.validate_wrapper import ValidateWrapper
 
-class WebCrawlingTool(BaseTool):
-    name = "web_crawling"
-    description = "A tool for crawling web pages and extracting information."
+class WebStaticCrawlingTool(BaseTool):
+    name = "Statistics Web Crawling"
+    description = "정적으로 특정 회사의 뉴스들을 크롤링해주는 도구 입니다."
 
     def _convert_code(self, stock_name: str) -> str:
         """
@@ -82,22 +82,18 @@ class WebCrawlingTool(BaseTool):
 
     @ValidateWrapper
     def process(self, **kwargs) -> dict: # **kwargs: url, depth
+        result_list = list()
         code_name = kwargs.get('code_name')
         if not code_name:
             raise ValueError("코드명 입력이 필요합니다.")
         news_list = self._fetch_news_list(code_name=code_name)
-        print(news_list)
-        code = self._convert_code(stock_name=code_name)
-        if not code:
-            raise ValueError(f"코드 변환에 실패한 종목명: {code_name}")
-        url = f"https://finance.naver.com/item/news.naver?code={code}"
-        # Placeholder for actual web crawling logic
-        res = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}).text
-        return res
-
+        for news in news_list:
+            result_list.append(f"Title: {news['title']}\nLink: {news['link']}\n")
+        return result_list
 
 # Example usage:
 if __name__ == "__main__":
     tool = WebCrawlingTool()
-    result = tool.process(code_name="레인보우로보틱스")
-    # print(result)
+    result = tool.process(code_name="케이뱅크")
+    print(result)
+
