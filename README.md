@@ -14,4 +14,4 @@ Data Warehouse Operation Works
    3. Data Qualith Check
       - Origin Source Data Diff Checker with DW
 3. Agent
-    1. LLM 기반 질문 & 답변 Agent
+    1. LLM 기반 지식 검색을 위한 Agent
