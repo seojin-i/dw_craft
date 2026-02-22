@@ -1,5 +1,5 @@
 import wikipedia
-from src.agent.tools.base import BaseTool
+from core.agent.tools.base import BaseTool
 
 
 class CompanyProfileTool(BaseTool):

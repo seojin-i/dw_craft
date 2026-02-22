@@ -1,6 +1,6 @@
 import json
 
-from src.agent.prompts.search_company_info_prompt import CompanyInfoPrompt
+from core.agent.prompts.search_company_info_prompt import CompanyInfoPrompt
 
 def process(self, **kwargs):
     while True:

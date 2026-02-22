@@ -1,3 +1,6 @@
+from dataclasses import dataclass
+
+@dataclass
 class SystemPropmt:
     system_prompt = """
     너는 주식 관련 정보에 대해서 도움을 주는 Assistant야. 
@@ -19,7 +22,7 @@ class SystemPropmt:
     }
     그렇지 않으면 일반 텍스트로 응답해줘
     """
-
+@dataclass
 class CompanyInfoPrompt:
     search_company_info_prompt = ["""
     1번째: 사용자의 질문을 보고, 회사의 기본 정보와 최근 뉴스를 찾아야 하는지 판단해줘. 응답은 하단과 같은 형태로 작성해줘

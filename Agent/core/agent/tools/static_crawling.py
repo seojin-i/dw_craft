@@ -2,8 +2,8 @@ import requests
 import re
 from bs4 import BeautifulSoup
 
-from src.agent.tools.base import BaseTool
-from src.agent.tools.validate_wrapper import ValidateWrapper
+from core.agent.tools.base import BaseTool
+from core.agent.validator.validate_wrapper import ValidateWrapper
 
 class WebStaticCrawlingTool(BaseTool):
     name = "Statistics Web Crawling"

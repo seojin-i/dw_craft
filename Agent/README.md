@@ -1,8 +1,10 @@
 # Stock Ressearch Agent (주식 정보 조사 에이전트)
 - uv + OpenAI 프로젝트 구조
-- 목적: 이 프로젝트는 uv 프레임워크와 OpenAI API를 활용하여 다양한 기능을 구현하는 것을 목표로 합니다. 아래는 프로젝트의 주요 디렉토리 및 파일 구조에 대한 설명입니다.
-- 특징: 이 Agent는 특정 종목의 공개된 정보를 수집·요약·설명한다.
-투자 판단이나 매매 조언은 하지 않는다.
+- 목적: 
+  - 이 프로젝트는 uv 프레임워크와 OpenAI API를 활용하여 다양한 기능을 구현하는 것을 목표로 합니다. 아래는 프로젝트의 주요 디렉토리 및 파일 구조에 대한 설명입니다.
+- 특징: 
+  - 이 Agent는 특정 종목의 공개된 정보를 수집·요약·설명한다.
+  - 투자 판단이나 매매 조언은 하지 않는다.
 - 디렉토리 구조 
 ```
 agent/
@@ -10,16 +12,28 @@ agent/
 ├─ uv.lock
 ├─ .env                     # OPENAI_API_KEY
 │
-├─ src/
+├─ core/
 │  ├─ agent/
-│  │  ├─ agent.py
-│  │  ├─ planner.py
-│  │  ├─ memory.py
-│  │  ├─ tools.py
-│  │  └─ prompts.py
-│  │
-│  └─ llm/
-│     └─ openai_client.py
+│  │  └─ base.py
+│  │  └─ SearchAgent.py
+│  │  └─ ThemaAgent.py
+│  ├─ prompts/
+│  │  └─ router_prompt.py
+│  │  └─ search_company_info_prompt.py
+│  ├─ test/
+│  ├─ tools/
+│  │  └─ base.py
+│  │  └─ company_profile.py
+│  │  └─ dynamic_crwaling.py
+│  │  └─ static_crawling.py
+│  │  └─ tool_registry.py
+│  ├─ utils/
+│  │  └─ base_call_llm.py
+│  ├─ validator/
+│  │  └─ tool_registry.py
+│  ├─ llm/
+│  │  └─ validate_wrapper.py
+├─ backend/
 │
 ├─ main.py
 └─ README.md
@@ -28,15 +42,14 @@ agent/
 ```
 User
  ↓
-Planner
- ├─ company_info_tool
- ├─ news_search_tool
- ├─ financials_tool
+RouterAgent
+ ├─ SearchAgent
+ ├─ ThemaAgent
+ ├─ ...
  ↓
 Synthesizer (LLM)
  ↓
 User
-
 ```
 
 ### Project start guide
