@@ -5,15 +5,39 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 
+from .base import BaseTool
 
-class WebDynamicCrawlingTool:
-    name = "Dynamic Web Crawling"
+class WebDynamicCrawlingTool(BaseTool):
+    name = "Dynamic_Web_Crawling"
     description = "동적으로 특정 웹페이지를 크롬으로 열어주는 도구 입니다."
     def __init__(self, headless=True, auto_close=True):
 
         self.headless = headless
         self.auto_close = auto_close
         self.driver = self._create_driver()
+
+    def schema(self) -> dict:
+        return {
+            "type": "function",
+            "function": {
+                "name": self.name,
+                "description": "네이버 금융에서 특정 종목의 뉴스를 동적 크롤링으로 가져오는 도구입니다.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "code": {
+                            "type": "string",
+                            "description": "종목 코드. 예: '005930' (삼성전자), '035720' (카카오)"
+                        },
+                        "limit": {
+                            "type": "integer",
+                            "description": "가져올 뉴스 개수 (기본값: 5)"
+                        }
+                    },
+                    "required": ["code"]
+                }
+            }
+        }
 
     def _create_driver(self):
         chrome_options = Options()
@@ -82,10 +106,12 @@ class WebDynamicCrawlingTool:
     def _close(self):
         self.driver.quit()
 
-    def process(self):
+    def process(self, **kwargs):
+        code = kwargs.get("code", "277810")  # 기본값: 종목 코드 (예: '277810'은 카카오)
+        limit = kwargs.get("limit", 10)  # 기본값: 가져올 뉴스 개수
         try:
             # 여기에 필요한 작업 수행
-            news = self.fetch_news("277810", limit=5)
+            news = self.fetch_news(code=code, limit=limit)
             for n in news:
                 print(n["title"])
                 print(n["link"])

@@ -6,8 +6,27 @@ from core.agent.tools.base import BaseTool
 from core.agent.validator.validate_wrapper import ValidateWrapper
 
 class WebStaticCrawlingTool(BaseTool):
-    name = "Statistics Web Crawling"
+    name = "Statistics_Web_Crawling"
     description = "정적으로 특정 회사의 뉴스들을 크롤링해주는 도구 입니다."
+
+    def schema(self) -> dict:
+        return {
+            "type": "function",
+            "function": {
+                "name": self.name,
+                "description": "네이버 뉴스에서 특정 키워드로 뉴스를 검색하여 제목과 링크를 반환하는 도구입니다.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "code_name": {
+                            "type": "string",
+                            "description": "검색할 종목명 또는 키워드. 예: '삼성전자', '카카오'"
+                        }
+                    },
+                    "required": ["code_name"]
+                }
+            }
+        }
 
     def _convert_code(self, stock_name: str) -> str:
         """

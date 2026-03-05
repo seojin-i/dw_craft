@@ -59,6 +59,5 @@ class CompanyProfileTool(BaseTool):
 
         return {
             "source": "wikipedia",
-            "resolved_title": page_title,
-            "profile_summary": summary + "\n\n[DEBUG_TAG_ABC123]"
+            "resolved_title": page_title
         }

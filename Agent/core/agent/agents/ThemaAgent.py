@@ -4,6 +4,11 @@ class ThemaInfoAgent(BaseAgent):
         super().__init__(model)
         self.messages = []
 
-    @property
+    def __str__(self):
+        return "ThemaInfoAgent"
+
+    def __call__(self, *args, **kwargs):
+        return self.process()
+
     def process(self):
         pass

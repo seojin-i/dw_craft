@@ -3,9 +3,9 @@ from .static_crawling import WebStaticCrawlingTool
 from .dynamic_crawling import WebDynamicCrawlingTool
 
 TOOLS = {
-    "search_company": CompanyProfileTool(),
-    "static_web_crawling" : WebStaticCrawlingTool(),
-    "dynamic_web_crawling" : WebDynamicCrawlingTool()
+    "get_company_profile": CompanyProfileTool(),
+    "Statistics_Web_Crawling": WebStaticCrawlingTool(),
+    # "Dynamic_Web_Crawling": WebDynamicCrawlingTool()
 }
 
 def get_tool_by_name(name):
@@ -14,10 +14,7 @@ def get_tool_by_name(name):
     :param name:
     :return:
     """
-    for tool in TOOLS:
-        if tool.name == name:
-            return tool
-    return None
+    return TOOLS.get(name, None)
 
 def run_rool(tool_name, **kwargs):
     """
