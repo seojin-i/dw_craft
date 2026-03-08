@@ -74,29 +74,41 @@ class WebStaticCrawlingTool(BaseTool):
         soup = BeautifulSoup(res.text, "html.parser")
 
         news_list = []
-        seen_links = set() # 중복제거
+        seen_links = set()
 
-        for a in soup.select("a[href*='article']"):
-            link = a["href"]
-            if link in seen_links:
+        # 네이버 뉴스 검색 결과 컨테이너
+        news_container = soup.select_one("ul.list_news")
+        if not news_container:
+            return news_list
+
+        # 각 뉴스 블록에서 제목 링크 추출
+        # 제목 링크는 외부 뉴스 URL을 가진 a 태그 중 첫 번째
+        for a in news_container.select("a"):
+            href = a.get("href", "")
+            text = a.get_text(strip=True)
+
+            # 필터링: 외부 뉴스 링크만 (네이버 내부 링크, Keep, 언론사 페이지 제외)
+            if not href.startswith("http"):
                 continue
-            seen_links.add(link)
-            span = a.select_one("span")
-            if not span:
+            if "media.naver.com" in href or "keep.naver.com" in href:
+                continue
+            if "news.naver.com" in href:
+                continue
+            if not text or len(text) < 5:
                 continue
 
-            # mark 제거
-            for mark in span.select("mark"):
-                mark.decompose()
-            title = span.get_text(strip=True)
-            if not title:
+            # 중복 링크 제거
+            if href in seen_links:
                 continue
+            seen_links.add(href)
+
             news_list.append({
-                "title": title,
-                "link": link
+                "title": text,
+                "link": href
             })
             if len(news_list) >= limit:
                 break
+
         return news_list
 
     @ValidateWrapper
@@ -112,7 +124,7 @@ class WebStaticCrawlingTool(BaseTool):
 
 # Example usage:
 if __name__ == "__main__":
-    tool = WebCrawlingTool()
+    tool = WebStaticCrawlingTool()
     result = tool.process(code_name="케이뱅크")
     print(result)
 
